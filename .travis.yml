@@ -13,7 +13,7 @@ after_success:
   - docker build -t kbouchek/multi-server ./server
   - docker build -t kbouchek/multi-worker ./worker
 # take images and push them to docker hub
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID --password-stdin"
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
   - docker push kbouchek/multi-client
   - docker push kbouchek/multi-nginx
   - docker push kbouchek/multi-server
