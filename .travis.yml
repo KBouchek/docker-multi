@@ -1,0 +1,20 @@
+sudo: required
+services:
+  - docker
+before_install:
+  - docker build -t kbouchek/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run kbouchek/react-test npm test -- --coverage
+ 
+after_success:
+  - docker build -t kbouchek/multi-client ./client
+  - docker build -t kbouchek/multi-nginx ./nginx
+  - docker build -t kbouchek/multi-server ./server
+  - docker build -t kbouchek/multi-worker ./worker
+# take images and push them to docker hub
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID --password-stdin"
+  - docker push kbouchek/multi-client
+  - docker push kbouchek/multi-nginx
+  - docker push kbouchek/multi-server
+  - docker push kbouchek/multi-worker
