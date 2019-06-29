@@ -6,6 +6,9 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
+
+const redis = require('redis');
+
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -18,14 +21,15 @@ const pgClient = new Pool({
   password: keys.pgPassword,
   port: keys.pgPort
 });
-pgClient.on('error', () => console.log('Lost PG connection'));
-
-pgClient
-  .query('CREATE TABLE IF NOT EXISTS values (number INT)')
-  .catch(err => console.log(err));
+/*
+pgClient.connect();
+const query = pgClient.query("CREATE TABLE IF NOT EXISTS values(number INT)", (err,res) => {
+	console.log('pgClientpgClientpgClientpgClientpgClientpgClientpgClient',err,res);
+});
+*/
 
 // Redis Client Setup
-const redis = require('redis');
+
 const redisClient = redis.createClient({
   host: keys.redisHost,
   port: keys.redisPort,
@@ -33,13 +37,34 @@ const redisClient = redis.createClient({
 });
 const redisPublisher = redisClient.duplicate();
 
+
+
+
+pgClient.on('error', () => console.log('Lost PG connection'));
+
+/*
+pgClient.query("CREATE TABLE IF NOT EXISTS values(number INT)", (err,res) => {
+	console.log(err,res);
+});
+pgClient.query('CREATE TABLE IF NOT EXISTS values (number INT)').catch(err => console.log(err));
+pool.query('CREATE TABLE IF NOT EXISTS values (number INT)', (err, result) => {
+  if (err) {
+    return console.error('Error executing query CREATE TABLE values', err.stack)
+  }
+  console.log('CREATE TABLE values OK') // brianc
+});*/
+
+
+
 // Express route handlers
 
 app.get('/', (req, res) => {
+
   res.send('Hi');
 });
 
 app.get('/values/all', async (req, res) => {
+  const xvalues = await pgClient.query("CREATE TABLE IF NOT EXISTS values(number INT)");
   const values = await pgClient.query('SELECT * from values');
 
   res.send(values.rows);
@@ -52,16 +77,16 @@ app.get('/values/current', async (req, res) => {
 });
 
 app.post('/values', async (req, res) => {
-	console.log('request made to /values url ');
+  console.log('request made to /values url ');
   const index = req.body.index;
-console.log('request made with index: '+index);
+  console.log('request made with index: '+index);
   if (parseInt(index) > 40) {
     return res.status(422).send('Index too high');
   }
 
   redisClient.hset('values', index, 'Nothing yet!');
   redisPublisher.publish('insert', index);
-  pgClient.query('CREATE TABLE IF NOT EXISTS values (number INT)')
+  //pgClient.query('CREATE TABLE IF NOT EXISTS values (number INT)')
   pgClient.query('INSERT INTO values(number) VALUES($1)', [index]);
 
   res.send({ working: true });

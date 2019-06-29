@@ -26,6 +26,9 @@ services:
         volumes:
             - /app/node_modules
             - ./client:/app
+        depends_on:
+            - postgres
+            - worker
     worker:
         build: 
             dockerfile: Dockerfile.dev
