@@ -3,8 +3,34 @@
   "containerDefinitions": [
    {
     "name": "client",
-	"image": 
-   }  
-  
+	"image": "kbouchek/multi-client",
+	"hostname": "client",
+	"essential": false
+   },
+   {
+    "name": "server",
+	"image": "kbouchek/multi-server",
+	"hostname": "api",
+	"essential": false
+    },
+	{
+    "name": "worker",
+	"image": "kbouchek/multi-worker",
+	"hostname": "worker",
+	"essential": false
+    },
+	{
+    "name": "nginx",
+	"image": "kbouchek/multi-nginx",
+	"hostname": "nginx",
+	"essential": true,
+	"portMappings": [
+	 {
+	  "hostPort": 80,
+	  "containerPort": 80
+	 }
+	],
+	"links": ["client","server"]
+    }
   ]
 }

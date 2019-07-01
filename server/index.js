@@ -5,12 +5,26 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
+/* app:
+   object to receive and respond to any http requests
+   that are coming or going back to the react application */
 const app = express();
 
-const redis = require('redis');
-
+/* cors: cross origin sharing : 
+   allow us to make to make request from one domain
+   (the react application we are running on)
+   to another domain or different port in this case, 
+    that the express api is host on   */
 app.use(cors());
+
+/* bodyParser: 
+   parse incoming request from the react application,
+   and turn the body of the post request into a json object,
+   that our express api can easily work with  */
 app.use(bodyParser.json());
+
+
+const redis = require('redis');
 
 // Postgres Client Setup
 const { Pool } = require('pg');
@@ -21,6 +35,7 @@ const pgClient = new Pool({
   password: keys.pgPassword,
   port: keys.pgPort
 });
+pgClient.on('error', () => console.log('Lost PG connection'));
 /*
 pgClient.connect();
 const query = pgClient.query("CREATE TABLE IF NOT EXISTS values(number INT)", (err,res) => {
@@ -29,7 +44,6 @@ const query = pgClient.query("CREATE TABLE IF NOT EXISTS values(number INT)", (e
 */
 
 // Redis Client Setup
-
 const redisClient = redis.createClient({
   host: keys.redisHost,
   port: keys.redisPort,
@@ -40,8 +54,11 @@ const redisPublisher = redisClient.duplicate();
 
 
 
-pgClient.on('error', () => console.log('Lost PG connection'));
 
+
+redisClient.on('connect', function() {
+    console.log('Redis client connected');
+});
 /*
 pgClient.query("CREATE TABLE IF NOT EXISTS values(number INT)", (err,res) => {
 	console.log(err,res);
@@ -86,11 +103,19 @@ app.post('/values', async (req, res) => {
 
   redisClient.hset('values', index, 'Nothing yet!');
   redisPublisher.publish('insert', index);
-  //pgClient.query('CREATE TABLE IF NOT EXISTS values (number INT)')
+  //pgClient.query('CREATE TABLE IF NOT EXISTS values (number INT)');
   pgClient.query('INSERT INTO values(number) VALUES($1)', [index]);
 
   res.send({ working: true });
 });
+
+/*
+pgClient.on('connect', () => {
+  console.log('connected to the Database');
+  pgClient.query('CREATE TABLE IF NOT EXISTS values (number INT)');
+});
+*/
+
 
 app.listen(5000, err => {
   console.log('Listening');
